@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<p>{{ movies|length }} Titles</p>
+<ul class="list">
+    {% for movie in movies %}
+    <li>{{ movie.title }} - {{ movie.state }}
+        <span class="float-right">
+            <a class="url" href={{ movie.url }} target="_blank" title="Find this movie on Douban">Link To It</a>
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

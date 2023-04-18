@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<p>{{ books|length }} Titles</p>
+<ul class="list">
+    {% for book in books %}
+    <li>{{ book.title }} - {{ book.state }}
+        <span class="float-right">
+            <a class="url" href={{ book.url }} target="_blank" title="Find this movie on Douban">Link To It</a>
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
