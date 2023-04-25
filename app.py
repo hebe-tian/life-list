@@ -1,7 +1,7 @@
 import os
 import sys
 import click
-from flask import Flask, render_template
+from flask import Flask, render_template, request, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -15,6 +15,7 @@ else:
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, 'data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'dev'
 db = SQLAlchemy(app)
 
 
@@ -33,11 +34,9 @@ class Item(db.Model):
     # 链接
     url = db.Column(db.String(40))
     # 标签 MOVIE/BOOK/STORE/PLACE
-    tag = db.Column(db.String(20))
-    # 热度
-    star = db.Column(db.Integer)
+    tag = db.Column(db.String(10))
     # 状态 WANT/USED
-    state = db.Column(db.Integer)
+    state = db.Column(db.String(10))
 
 
 @app.cli.command()
@@ -55,33 +54,196 @@ def search(tag):
     return content
 
 
+def add(input_title, input_url, input_tag, input_state):
+    if not (input_title and input_url and input_tag and input_state):
+        flash('Without Input.')  # 显示错误提示
+        return
+    elif len(input_title) > 60 or len(input_url) > 40 or len(input_tag) > 10 or len(input_state) > 10:
+        flash('Wrong Input.')  # 显示错误提示
+        return
+    else:
+        item = Item(title=input_title, url=input_url, tag=input_tag, state=input_state)
+        db.session.add(item)
+        db.session.commit()
+        flash('Item added.')
+
+
+def edit(input_id, input_title, input_url, input_tag, input_state):
+    item = Item.query.get(input_id)
+
+    if not (input_title and input_url and input_tag and input_state):
+        flash('Without Input.')  # 显示错误提示
+        return
+
+    elif len(input_title) > 60 or len(input_url) > 40 or len(input_state) > 10:
+        flash('Wrong Input.')  # 显示错误提示
+        return
+
+    else:
+        item.title = input_title
+        item.url = input_url
+        item.state = input_state
+        db.session.commit()
+        flash('Item updated.')
+
+
+def delete(input_id, input_tag):
+    item = Item.query.get_or_404(input_id)
+    if item.tag == input_tag:
+        db.session.delete(item)
+        db.session.commit()
+        flash(input_tag+' '+item.title+' is deleted.')
+    else:
+        flash('Item tag error.')
+
+
 @app.route('/')
 def about_me():
     return render_template('me.html')
 
 
-@app.route('/movie')
-def search_movie():
+@app.route('/movie', methods=['GET', 'POST'])
+def movie_page():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        url = request.form.get('url')
+        state = request.form.get('state')
+        add(input_title=title, input_url=url, input_tag='MOVIE', input_state=state)
+        return redirect(url_for('movie_page'))
+
     movies = search('MOVIE')
     return render_template('movie.html', movies=movies)
 
 
-@app.route('/book')
-def search_book():
+@app.route('/book', methods=['GET', 'POST'])
+def book_page():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        url = request.form.get('url')
+        state = request.form.get('state')
+        add(input_title=title, input_url=url, input_tag='BOOK', input_state=state)
+        return redirect(url_for('book_page'))
+
     books = search('BOOK')
     return render_template('book.html', books=books)
 
 
-@app.route('/store')
-def search_store():
+@app.route('/store', methods=['GET', 'POST'])
+def store_page():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        url = request.form.get('url')
+        state = request.form.get('state')
+        add(input_title=title, input_url=url, input_tag='STORE', input_state=state)
+        return redirect(url_for('store_page'))
+
     stores = search('STORE')
     return render_template('store.html', stores=stores)
 
 
-@app.route('/place')
-def search_place():
+@app.route('/place', methods=['GET', 'POST'])
+def place_page():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        url = request.form.get('url')
+        state = request.form.get('state')
+        add(input_title=title, input_url=url, input_tag='place', input_state=state)
+        return redirect(url_for('place_page'))
+
     places = search('PLACE')
     return render_template('place.html', places=places)
+
+
+@app.route('/movie/edit/<int:movie_id>', methods=['GET', 'POST'])
+def edit_movie(movie_id):
+    item = Item.query.get_or_404(movie_id)
+    if item.tag == 'MOVIE':
+        if request.method == 'POST':
+            title = request.form['title']
+            url = request.form['url']
+            state = request.form['state']
+            edit(input_id=movie_id, input_title=title, input_url=url, input_state=state, input_tag='MOVIE')
+            return redirect(url_for('movie_page'))
+
+        return render_template('edit.html', item=item)
+    else:
+        flash('Not movie')
+        return redirect(url_for('movie_page'))
+
+
+@app.route('/book/edit/<int:book_id>', methods=['GET', 'POST'])
+def edit_book(book_id):
+    item = Item.query.get_or_404(book_id)
+    if item.tag == 'BOOK':
+        if request.method == 'POST':
+            title = request.form['title']
+            url = request.form['url']
+            state = request.form['state']
+            edit(input_id=book_id, input_title=title, input_url=url, input_state=state, input_tag='BOOK')
+            return redirect(url_for('book_page'))
+
+        return render_template('edit.html', item=item)
+    else:
+        flash('Not book')
+        return redirect(url_for('book_page'))
+
+
+@app.route('/store/edit/<int:store_id>', methods=['GET', 'POST'])
+def edit_store(store_id):
+    item = Item.query.get_or_404(store_id)
+    if item.tag == 'STORE':
+        if request.method == 'POST':
+            title = request.form['title']
+            url = request.form['url']
+            state = request.form['state']
+            edit(input_id=store_id, input_title=title, input_url=url, input_state=state, input_tag='STORE')
+            return redirect(url_for('store_page'))
+
+        return render_template('edit.html', item=item)
+    else:
+        flash('Not store')
+        return redirect(url_for('store_page'))
+
+
+@app.route('/place/edit/<int:place_id>', methods=['GET', 'POST'])
+def edit_place(place_id):
+    item = Item.query.get_or_404(place_id)
+    if item.tag == 'PLACE':
+        if request.method == 'POST':
+            title = request.form['title']
+            url = request.form['url']
+            state = request.form['state']
+            edit(input_id=place_id, input_title=title, input_url=url, input_state=state, input_tag='PLACE')
+            return redirect(url_for('place_page'))
+
+        return render_template('edit.html', item=item)
+    else:
+        flash('Not place')
+        return redirect(url_for('place_page'))
+
+
+@app.route('/movie/delete/<int:movie_id>', methods=['POST'])
+def delete_movie(movie_id):
+    delete(movie_id, input_tag='MOVIE')
+    return redirect(url_for('movie_page'))
+
+
+@app.route('/book/delete/<int:book_id>', methods=['POST'])
+def delete_book(book_id):
+    delete(book_id, input_tag='BOOK')
+    return redirect(url_for('book_page'))
+
+
+@app.route('/store/delete/<int:store_id>', methods=['POST'])
+def delete_store(store_id):
+    delete(store_id, input_tag='STORE')
+    return redirect(url_for('store_page'))
+
+
+@app.route('/place/delete/<int:place_id>', methods=['POST'])
+def delete_place(place_id):
+    delete(place_id, input_tag='PLACE')
+    return redirect(url_for('place_page'))
 
 
 # 上下文处理器，每个模版都会调用return_user

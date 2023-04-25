@@ -2,11 +2,24 @@
 
 {% block content %}
 <p>{{ movies|length }} Titles</p>
+<form method="post">
+    Name <input type="text" name="title" autocomplete="off" required>
+    URL <input type="text" name="url" autocomplete="off" required>
+    STATE <select name="state">
+    <option value="USED">Used</option>
+    <option value="WANT">Want</option>
+    </select>
+    <input class="btn" type="submit" name="submit" value="Add">
+</form>
 <ul class="list">
     {% for movie in movies %}
     <li>{{ movie.title }} - {{ movie.state }}
         <span class="float-right">
             <a class="url" href={{ movie.url }} target="_blank" title="Find this movie on Douban">Link To It</a>
+            <a class="btn" href="{{ url_for('edit_movie', movie_id=movie.id) }}">Edit</a>
+            <form class="inline-form" method="post" action="{{ url_for('delete_movie', movie_id=movie.id) }}">
+                <input class="btn" type="submit" name="delete" value="Delete" onclick="return confirm('Are you sure?')">
+            </form>
         </span>
     </li>
     {% endfor %}

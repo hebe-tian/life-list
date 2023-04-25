@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h3>Edit item</h3>
+<form method="post">
+    Title <input type="text" name="title" autocomplete="off" required value="{{ item.title }}">
+    URL <input type="text" name="url" autocomplete="off" required value="{{ item.url }}">
+    STATE <select name="state">
+    <option value="USED">Used</option>
+    <option value="WANT">Want</option>
+    </select>
+    <input class="btn" type="submit" name="submit" value="Submit">
+</form>
+{% endblock %}
