@@ -2,6 +2,7 @@
 
 {% block content %}
 <p>{{ stores|length }} Titles</p>
+{% if current_user.is_authenticated %}
 <form method="post">
     Name <input type="text" name="title" autocomplete="off" required>
     URL <input type="text" name="url" autocomplete="off" required>
@@ -10,15 +11,19 @@
     <option value="WANT">Want</option>
     </select>
     <input class="btn" type="submit" name="submit" value="Add">
+</form>
+{% endif %}
 <ul class="list">
     {% for store in stores %}
     <li>{{ store.title }} - {{ store.state }}
         <span class="float-right">
             <a class="url" href={{ store.url }} target="_blank" title="Find this movie on Douban">Link To It</a>
+            {% if current_user.is_authenticated %}
             <a class="btn" href="{{ url_for('edit_store', store_id=store.id) }}">Edit</a>
             <form class="inline-form" method="post" action="{{ url_for('delete_store', store_id=store.id) }}">
                 <input class="btn" type="submit" name="delete" value="Delete" onclick="return confirm('Are you sure?')">
             </form>
+            {% endif %}
         </span>
     </li>
     {% endfor %}

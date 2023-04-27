@@ -3,6 +3,8 @@ import sys
 import click
 from flask import Flask, render_template, request, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 
 
 # support addr by os
@@ -17,12 +19,44 @@ app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, 'da
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'dev'
 db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
 
 
 # database config
-class User(db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20))
+    username = db.Column(db.String(20))
+    password_hash = db.Column(db.String(120))
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+@app.cli.command()
+@click.option('--username', prompt=True)
+@click.option('--password', prompt=True, hide_input=True, confirmation_prompt=True)
+# hide_input 隐藏输入
+# confirmation_prompt 二次确认
+def admin(username, password):
+    db.create_all()
+    user = User.query.first()
+    if user is not None:
+        click.echo('Updating ...')
+        user.username = username
+        user.set_password(password)
+    else:
+        click.echo('Creating ...')
+        user = User(username=username, name='Admin')
+        user.set_password(password)
+        db.session.add(user)
+
+    db.session.commit()
+    click.echo('Done.')
 
 
 # tag 枚举，后续定义
@@ -46,6 +80,42 @@ def initdb(drop):
         db.drop_all()
     db.create_all()
     click.echo('DB Ready.')
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    user = User.query.get(int(user_id))
+    return user
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        if not username or not password:
+            flash('Without input.')
+            return redirect(url_for('login'))
+
+        user = User.query.first()
+        if username == user.username and user.check_password(password):
+            login_user(user)
+            flash('Login success.')
+            return redirect(url_for('about_me'))
+
+        flash('Wrong input.')
+        return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Logout.')
+    return render_template('me.html')
 
 
 def search(tag):
@@ -105,6 +175,8 @@ def about_me():
 @app.route('/movie', methods=['GET', 'POST'])
 def movie_page():
     if request.method == 'POST':
+        if not current_user.is_authenticated:
+            return redirect(url_for('movie_page'))
         title = request.form.get('title')
         url = request.form.get('url')
         state = request.form.get('state')
@@ -118,6 +190,8 @@ def movie_page():
 @app.route('/book', methods=['GET', 'POST'])
 def book_page():
     if request.method == 'POST':
+        if not current_user.is_authenticated:
+            return redirect(url_for('book_page'))
         title = request.form.get('title')
         url = request.form.get('url')
         state = request.form.get('state')
@@ -131,6 +205,8 @@ def book_page():
 @app.route('/store', methods=['GET', 'POST'])
 def store_page():
     if request.method == 'POST':
+        if not current_user.is_authenticated:
+            return redirect(url_for('store_page'))
         title = request.form.get('title')
         url = request.form.get('url')
         state = request.form.get('state')
@@ -144,6 +220,8 @@ def store_page():
 @app.route('/place', methods=['GET', 'POST'])
 def place_page():
     if request.method == 'POST':
+        if not current_user.is_authenticated:
+            return redirect(url_for('place_page'))
         title = request.form.get('title')
         url = request.form.get('url')
         state = request.form.get('state')
@@ -155,6 +233,7 @@ def place_page():
 
 
 @app.route('/movie/edit/<int:movie_id>', methods=['GET', 'POST'])
+@login_required
 def edit_movie(movie_id):
     item = Item.query.get_or_404(movie_id)
     if item.tag == 'MOVIE':
@@ -172,6 +251,7 @@ def edit_movie(movie_id):
 
 
 @app.route('/book/edit/<int:book_id>', methods=['GET', 'POST'])
+@login_required
 def edit_book(book_id):
     item = Item.query.get_or_404(book_id)
     if item.tag == 'BOOK':
@@ -189,6 +269,7 @@ def edit_book(book_id):
 
 
 @app.route('/store/edit/<int:store_id>', methods=['GET', 'POST'])
+@login_required
 def edit_store(store_id):
     item = Item.query.get_or_404(store_id)
     if item.tag == 'STORE':
@@ -206,6 +287,7 @@ def edit_store(store_id):
 
 
 @app.route('/place/edit/<int:place_id>', methods=['GET', 'POST'])
+@login_required
 def edit_place(place_id):
     item = Item.query.get_or_404(place_id)
     if item.tag == 'PLACE':
@@ -223,24 +305,28 @@ def edit_place(place_id):
 
 
 @app.route('/movie/delete/<int:movie_id>', methods=['POST'])
+@login_required
 def delete_movie(movie_id):
     delete(movie_id, input_tag='MOVIE')
     return redirect(url_for('movie_page'))
 
 
 @app.route('/book/delete/<int:book_id>', methods=['POST'])
+@login_required
 def delete_book(book_id):
     delete(book_id, input_tag='BOOK')
     return redirect(url_for('book_page'))
 
 
 @app.route('/store/delete/<int:store_id>', methods=['POST'])
+@login_required
 def delete_store(store_id):
     delete(store_id, input_tag='STORE')
     return redirect(url_for('store_page'))
 
 
 @app.route('/place/delete/<int:place_id>', methods=['POST'])
+@login_required
 def delete_place(place_id):
     delete(place_id, input_tag='PLACE')
     return redirect(url_for('place_page'))
@@ -257,32 +343,3 @@ def return_user():
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
-
-
-# create fake data
-@app.cli.command()
-def forge():
-    """Generate fake data."""
-    db.create_all()
-
-    # 全局的两个变量移动到这个函数内
-    name = 'DiuDiu'
-    movies = [
-        {'title': 'My Neighbor Totoro', 'url': 'https://movie.douban.com/subject/1291560/', 'tag': 'MOVIE',
-         'state': 'USED'},
-        {'title': 'Dead Poets Society', 'url': 'https://movie.douban.com/subject/1291548/', 'tag': 'BOOK',
-         'state': 'WANT'},
-        {'title': 'My Neighbor Totoro', 'url': 'https://movie.douban.com/subject/1291560/', 'tag': 'PLACE',
-         'state': 'USED'},
-        {'title': 'Dead Poets Society', 'url': 'https://movie.douban.com/subject/1291548/', 'tag': 'STORE',
-         'state': 'WANT'}
-    ]
-
-    user = User(name=name)
-    db.session.add(user)
-    for m in movies:
-        movie = Item(title=m['title'], url=m['url'], tag=m['tag'], state=m['state'])
-        db.session.add(movie)
-
-    db.session.commit()
-    click.echo('Done.')
