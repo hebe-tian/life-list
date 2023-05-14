@@ -35,6 +35,28 @@ def logout():
     return render_template('me.html')
 
 
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if request.method == 'POST':
+        name = request.form['name']
+
+        if not name or len(name) > 20:
+            flash('Invalid input.')
+            return redirect(url_for('settings'))
+
+        current_user.name = name
+        # current_user 会返回当前登录用户的数据库记录对象
+        # 等同于下面的用法
+        # user = User.query.first()
+        # user.name = name
+        db.session.commit()
+        flash('Settings updated.')
+        return redirect(url_for('about_me'))
+
+    return render_template('settings.html')
+
+
 def search(tag):
     content = Item.query.filter_by(tag=tag).all()
     print(content)

@@ -25,6 +25,7 @@
             <li><a href="{{ url_for('store_page') }}">StoreList</a></li>
             <li><a href="{{ url_for('place_page') }}">PlaceList</a></li>
             {% if current_user.is_authenticated %}
+                <li><a href="{{ url_for('settings') }}">Settings</a> </li>
                 <li><a href="{{ url_for('logout') }}">Logout</a></li>
             {% else %}
                 <li><a href="{{ url_for('login') }}">Login</a></li>
