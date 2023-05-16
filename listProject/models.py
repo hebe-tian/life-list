@@ -23,7 +23,7 @@ class Item(db.Model):
     # 名称
     title = db.Column(db.String(60))
     # 链接
-    url = db.Column(db.String(40))
+    url = db.Column(db.String(256))
     # 标签 MOVIE/BOOK/STORE/PLACE
     tag = db.Column(db.String(10))
     # 状态 WANT/USED

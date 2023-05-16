@@ -5,6 +5,13 @@ from listProject import app, db
 from listProject.models import User, Item
 
 
+msg = {'none': '输入信息为空！！！',
+       'long': '输入信息过长！！！',
+       'wrong': '输入信息不匹配！！！',
+       'success': '操作成功'
+       }
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -12,7 +19,7 @@ def login():
         password = request.form['password']
 
         if not username or not password:
-            flash('Without input.')
+            flash(msg['none'])
             return redirect(url_for('login'))
 
         user = User.query.first()
@@ -21,7 +28,7 @@ def login():
             flash('Login success.')
             return redirect(url_for('about_me'))
 
-        flash('Wrong input.')
+        flash(msg['wrong'])
         return redirect(url_for('login'))
 
     return render_template('login.html')
@@ -42,7 +49,7 @@ def settings():
         name = request.form['name']
 
         if not name or len(name) > 20:
-            flash('Invalid input.')
+            flash(msg['wrong'])
             return redirect(url_for('settings'))
 
         current_user.name = name
@@ -51,7 +58,7 @@ def settings():
         # user = User.query.first()
         # user.name = name
         db.session.commit()
-        flash('Settings updated.')
+        flash(msg['success'])
         return redirect(url_for('about_me'))
 
     return render_template('settings.html')
@@ -65,27 +72,27 @@ def search(tag):
 
 def add(input_title, input_url, input_tag, input_state):
     if not (input_title and input_url and input_tag and input_state):
-        flash('Without Input.')  # 显示错误提示
+        flash(msg['none'])  # 显示错误提示
         return
-    elif len(input_title) > 60 or len(input_url) > 40 or len(input_tag) > 10 or len(input_state) > 10:
-        flash('Wrong Input.')  # 显示错误提示
+    elif len(input_title) > 60 or len(input_url) > 256 or len(input_tag) > 10 or len(input_state) > 10:
+        flash(msg['long'])  # 显示错误提示
         return
     else:
         item = Item(title=input_title, url=input_url, tag=input_tag, state=input_state)
         db.session.add(item)
         db.session.commit()
-        flash('Item added.')
+        flash(msg['success'])
 
 
 def edit(input_id, input_title, input_url, input_tag, input_state):
     item = Item.query.get(input_id)
 
     if not (input_title and input_url and input_tag and input_state):
-        flash('Without Input.')  # 显示错误提示
+        flash(msg['none'])  # 显示错误提示
         return
 
-    elif len(input_title) > 60 or len(input_url) > 40 or len(input_state) > 10:
-        flash('Wrong Input.')  # 显示错误提示
+    elif len(input_title) > 60 or len(input_url) > 256 or len(input_state) > 10:
+        flash(msg['long'])  # 显示错误提示
         return
 
     else:
@@ -93,7 +100,7 @@ def edit(input_id, input_title, input_url, input_tag, input_state):
         item.url = input_url
         item.state = input_state
         db.session.commit()
-        flash('Item updated.')
+        flash(msg['success'])
 
 
 def delete(input_id, input_tag):
