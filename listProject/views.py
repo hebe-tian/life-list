@@ -171,7 +171,7 @@ def place_page():
         title = request.form.get('title')
         url = request.form.get('url')
         state = request.form.get('state')
-        add(input_title=title, input_url=url, input_tag='place', input_state=state)
+        add(input_title=title, input_url=url, input_tag='PLACE', input_state=state)
         return redirect(url_for('place_page'))
 
     places = search('PLACE')
