@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<p>{{ stores|length }} Titles</p>
+<p>{{ stores|length }} Stores</p>
 {% if current_user.is_authenticated %}
 <form method="post">
     Name <input type="text" name="title" autocomplete="off" required>
@@ -15,7 +15,7 @@
 {% endif %}
 <ul class="list">
     {% for store in stores %}
-    <li>{{ store.title }} - {{ store.state }}
+    <li>{{ store.title }} - <a class="state">{{ store.state }}</a>
         <span class="float-right">
             <a class="url" href={{ store.url }} target="_blank" title="Find this movie on Douban">Link To It</a>
             {% if current_user.is_authenticated %}

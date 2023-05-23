@@ -66,7 +66,6 @@ def settings():
 
 def search(tag):
     content = Item.query.filter_by(tag=tag).all()
-    print(content)
     return content
 
 

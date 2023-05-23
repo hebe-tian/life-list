@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<p>{{ places|length }} Titles</p>
+<p>{{ places|length }} Places</p>
 {% if current_user.is_authenticated %}
 <form method="post">
     Name <input type="text" name="title" autocomplete="off" required>
@@ -15,7 +15,7 @@
 {% endif %}
 <ul class="list">
     {% for place in places %}
-    <li>{{ place.title }} - {{ place.state }}
+    <li>{{ place.title }} - <a class="state">{{ place.state }}</a>
         <span class="float-right">
             <a class="url" href={{ place.url }} target="_blank" title="Find this movie on Douban">Link To It</a>
             {% if current_user.is_authenticated %}

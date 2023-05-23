@@ -66,6 +66,11 @@ nav li a:hover {
     float: right;
 }
 
+.state {
+    color: pink
+}
+}
+
 .url {
     font-size: 12px;
     font-weight: bold;
