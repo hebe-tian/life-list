@@ -24,7 +24,6 @@ class TestCase:
 
     # 测试程序是否处于测试模式
     def test_app_is_testing(self):
-        print('skip')
         assert app.config['TESTING']
 
     def test_404_page(self):
